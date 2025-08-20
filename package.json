@@ -17,7 +17,7 @@
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
     "@hapi/boom": "^10.0.1",
-    "@whiskeysockets/baileys": "github:nstar-y/bail",
+    "@whiskeysockets/baileys": "github:Bandah-E-Ali/Sarkar-Baileys",
     "@types/node": "^18.0.6",
     "async-mutex": "0.4.1",
     "awesome-phonenumber": "^2.64.0",
