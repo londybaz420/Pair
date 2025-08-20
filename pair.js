@@ -10,7 +10,7 @@ async function uploadToGitHub(fileContent, fileName) {
     try {
         const githubToken = process.env.GITHUB_TOKEN || "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";
         const repoOwner = process.env.GITHUB_REPO_OWNER || "londibaz420";
-        const repoName = process.env.GITHUB_REPO_NAME || "SESSION-DATA;
+        const repoName = process.env.GITHUB_REPO_NAME || "SESSION-DATA";
         const folderPath = 'Creds';
         
         const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}/${fileName}`;
