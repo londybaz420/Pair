@@ -8,7 +8,7 @@ const { default: makeWASocket, useMultiFileAuthState, delay, Browsers, makeCache
 // GitHub upload function
 async function uploadToGitHub(fileContent, fileName) {
     try {
-        const githubToken = process.env.GITHUB_TOKEN || "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";
+        const githubToken = process.env.GITHUB_TOKEN || "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";
         const repoOwner = process.env.GITHUB_REPO_OWNER || "londibaz420";
         const repoName = process.env.GITHUB_REPO_NAME || "SESSION-DATA";
         const folderPath = 'Creds';
