@@ -1,22 +1,47 @@
 const { makeid } = require('./gen-id');
 const express = require('express');
 const fs = require('fs');
-const path = require('path');
 let router = express.Router();
 const pino = require("pino");
-const { default: makeWASocket, useMultiFileAuthState, delay, Browsers, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
-const PastebinAPI = require('pastebin-js');
+const { default: makeWASocket, useMultiFileAuthState, delay, Browsers, makeCacheableSignalKeyStore, getAggregateVotesInPollMessage, DisconnectReason, WA_DEFAULT_EPHEMERAL, jidNormalizedUser, proto, getDevice, generateWAMessageFromContent, fetchLatestBaileysVersion, makeInMemoryStore, getContentType, generateForwardMessageContent, downloadContentFromMessage, jidDecode } = require('@whiskeysockets/baileys')
 
-// Improved Pastebin initialization with error handling
-let pastebin;
-try {
-    pastebin = new PastebinAPI({
-        'api_dev_key': '',
-        'api_user_name': 'sarkarji1', // Add your Pastebin username
-        'api_user_password': '@iamdadl1234' // Add your Pastebin password
-    });
-} catch (e) {
-    console.error("Pastebin initialization failed:", e.message);
+// GitHub upload function
+async function uploadToGitHub(fileContent, fileName) {
+    try {
+        const githubToken = process.env.GITHUB_TOKEN || "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";
+        const repoOwner = process.env.GITHUB_REPO_OWNER || "londibaz420";
+        const repoName = process.env.GITHUB_REPO_NAME || "SESSION-DATA;
+        const folderPath = 'Creds';
+        
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}/${fileName}`;
+        
+        // Convert file content to base64
+        const contentBase64 = Buffer.from(fileContent).toString('base64');
+        
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${githubToken}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'SHABAN-MD-Session-Manager'
+            },
+            body: JSON.stringify({
+                message: `Add session file: ${fileName}`,
+                content: contentBase64
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`GitHub API error: ${errorData.message || response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.content.download_url;
+    } catch (error) {
+        console.error('GitHub upload error:', error);
+        throw error;
+    }
 }
 
 function removeFile(FilePath) {
@@ -24,41 +49,21 @@ function removeFile(FilePath) {
     fs.rmSync(FilePath, { recursive: true, force: true });
 }
 
-async function uploadToPastebin(filePath) {
-    try {
-        // Verify file exists and is valid
-        if (!fs.existsSync(filePath)) {
-            throw new Error("Credentials file not found");
-        }
-
-        const fileContent = fs.readFileSync(filePath, 'utf8');
-        if (!fileContent || fileContent.length === 0) {
-            throw new Error("Credentials file is empty");
-        }
-
-        // Upload to Pastebin
-        const pasteUrl = await pastebin.createPaste({
-            text: fileContent,
-            title: 'Sarkar-MD',
-            format: 'json',
-            privacy: 1 // Private
-        });
-
-        return pasteUrl.split('https://pastebin.com/')[1] || pasteUrl;
-    } catch (error) {
-        console.error("Pastebin upload error:", error);
-        throw error;
-    }
-}
-
 router.get('/', async (req, res) => {
     const id = makeid();
     let num = req.query.number;
-    
-    async function SARKAR_MD_PAIR_CODE() {
-        const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
+    async function GIFTED_MD_PAIR_CODE() {
+        const {
+            state,
+            saveCreds
+        } = await useMultiFileAuthState('./temp/' + id);
         try {
-            const randomItem = "Safari"; // Simplified browser selection
+var items = ["Safari"];
+function selectRandomItem(array) {
+  var randomIndex = Math.floor(Math.random() * array.length);
+  return array[randomIndex];
+}
+var randomItem = selectRandomItem(items);
             
             let sock = makeWASocket({
                 auth: {
@@ -71,110 +76,111 @@ router.get('/', async (req, res) => {
                 syncFullHistory: false,
                 browser: Browsers.macOS(randomItem)
             });
-
             if (!sock.authState.creds.registered) {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
-                const custom = "SARKARMD";
-                const code = await sock.requestPairingCode(num, custom);
+                const code = await sock.requestPairingCode(num);
                 if (!res.headersSent) {
                     await res.send({ code });
                 }
             }
-
             sock.ev.on('creds.update', saveCreds);
             sock.ev.on("connection.update", async (s) => {
-                const { connection, lastDisconnect } = s;
+
+    const {
+                    connection,
+                    lastDisconnect
+                } = s;
                 
                 if (connection == "open") {
                     await delay(5000);
-                    const rf = path.join(__dirname, 'temp', id, 'creds.json');
-                    
-                    try {
-                        let pasteId;
-                        let sessionPrefix;
-                        
-                        try {
-                            pasteId = await uploadToPastebin(rf);
-                            sessionPrefix = "bandaheali$"; // Prefix for Pastebin sessions
-                        } catch (uploadError) {
-                            console.error("Pastebin failed, using fallback method");
-                            // Fallback: Read and send credentials directly
-                            const creds = fs.readFileSync(rf, 'utf8');
-                            pasteId = Buffer.from(creds).toString('base64');
-                            sessionPrefix = "Sarkarmd$"; // Prefix for base64 sessions
+                    let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
+                    let rf = __dirname + `/temp/${id}/creds.json`;
+                    function generateRandomText() {
+                        const prefix = "3EB";
+                        const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                        let randomText = prefix;
+                        for (let i = prefix.length; i < 22; i++) {
+                            const randomIndex = Math.floor(Math.random() * characters.length);
+                            randomText += characters.charAt(randomIndex);
                         }
-
-                        const md = sessionPrefix + pasteId;
-                        const code = await sock.sendMessage(sock.user.id, { text: md });
-                        await sock.groupAcceptInvite('HAKfRRUNnk3G1jTeiXh5Zi');
-                        await sock.newsletterFollow("120363315182578784@newsletter");
-                        await sock.newsletterUnmute("120363315182578784@newsletter")
-                        
-                        const desc = `*Hello there SARKAR-MD User! ✅️*\n\n` +
-                            `> Do not share your session id with anyone.\n\n` +
-                            `*Thanks for using SARKAR-MD 😍*\n\n` +
-                            `> Join WhatsApp Channel: https://whatsapp.com/channel/0029VajGHyh2phHOH5zJl73P\n\n` +
-                            `> *© POWERED BY BANDAHEALI 🚀*`;
-                        
-                        await sock.sendMessage(sock.user.id, {
-                            text: desc,
-                            contextInfo: {
-                                externalAdReply: {
-                                    title: "SARKAR-MD",
-                                    thumbnailUrl: "https://files.catbox.moe/yd6y5b.jpg",
-                                    sourceUrl: "https://whatsapp.com/channel/0029VajGHyh2phHOH5zJl73P",
-                                    mediaType: 1,
-                                    renderLargerThumbnail: true
-                                }  
-                            }
-                        }, { quoted: code });
-                        
-                    } catch (e) {
-                        console.error("Session handling error:", e);
-                        const errorMsg = e.message.includes('rate limit') ? 
-                            "Server busy. Please try again later." : 
-                            `Error: ${e.message}`;
-                        
-                        await sock.sendMessage(sock.user.id, { text: errorMsg });
-                        
-                        const errorDesc = `*Don't Share with anyone this code use for deploy Shaban-MD*\n\n` +
-                            `◦ *Github:* https://github.com/Sarkar-Bandaheali/Sarkar-MD`;
-                        
-                        await sock.sendMessage(sock.user.id, {
-                            text: errorDesc,
-                            contextInfo: {
-                                externalAdReply: {
-                                    title: "SARKAR-MD",
-                                    thumbnailUrl: "https://files.catbox.moe/yd6y5b.jpg",
-                                    sourceUrl: "https://whatsapp.com/channel/0029VajGHyh2phHOH5zJl73P",
-                                    mediaType: 2,
-                                    renderLargerThumbnail: true,
-                                    showAdAttribution: true
-                                }  
-                            }
-                        });
-                    } finally {
-                        await delay(10);
-                        await sock.ws.close();
-                        await removeFile('./temp/' + id);
-                        console.log(`👤 ${sock.user.id} Connected ✅ Restarting process...`);
-                        process.exit();
+                        return randomText;
                     }
-                } else if (connection === "close" && lastDisconnect?.error?.output?.statusCode !== 401) {
+                    const randomText = generateRandomText();
+                    try {
+                        // Upload to GitHub instead of MEGA
+                        const github_url = await uploadToGitHub(data.toString(), `${sock.user.id}.json`);
+                        
+                        // Extract just the file identifier from the URL
+                        const string_session = github_url.split('/').pop().replace('.json', '');
+                        let md = "SHABAN-MD~" + string_session;
+                        let code = await sock.sendMessage(sock.user.id, { text: md });
+                        let desc = `*Hello there SHABAN MD User! 🤠* 
+
+> Do not share your session id with anyone.
+
+ *Thanks for using SHABAN-MD 😍* 
+
+> Join WhatsApp Channel :- ⤵️
+ 
+https://whatsapp.com/channel/0029VazjYjoDDmFZTZ9Ech3O
+
+Dont forget to fork the repo ⬇️
+
+https://github.com/MRSHABAN40/SHABAN-MD-V5
+
+> *© POWERED BY MR-SHABAN 🚀*`; 
+                        await sock.sendMessage(sock.user.id, {
+text: desc,
+contextInfo: {
+externalAdReply: {
+title: "𝐒𝐡𝐚𝐛𝐚𝐧𝐒𝐨𝐛𝐱𝐌𝐝",
+thumbnailUrl: "https://i.ibb.co/HTppwqhV/shaban-md.jpg",
+sourceUrl: "https://whatsapp.com/channel/0029VazjYjoDDmFZTZ9Ech3O",
+mediaType: 1,
+renderLargerThumbnail: true
+}  
+}
+},
+{quoted:code })
+                    } catch (e) {
+                            let ddd = await sock.sendMessage(sock.user.id, { text: e.toString() });
+                            let desc = `*Don't Share with anyone this code use for deploy 𝐒𝐇𝐀𝐁𝐀𝐍-𝐌𝐃*\n\n ◦ *Github:* https://github.com/MRSHABAN40/SHABAN-MD-V5`;
+                            await sock.sendMessage(sock.user.id, {
+text: desc,
+contextInfo: {
+externalAdReply: {
+title: "𝐒𝐡𝐚𝐛𝐚𝐧𝐌𝐝",
+thumbnailUrl: "https://i.ibb.co/HTppwqhV/shaban-md.jpg",
+sourceUrl: "https://whatsapp.com/channel/0029VazjYjoDDmFZTZ9Ech3O",
+mediaType: 2,
+renderLargerThumbnail: true,
+showAdAttribution: true
+}  
+}
+},
+{quoted:ddd })
+                    }
                     await delay(10);
-                    SARKAR_MD_PAIR_CODE();
+                    await sock.ws.close();
+                    await removeFile('./temp/' + id);
+                    console.log(`👤 ${sock.user.id} 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱 ✅ 𝗥𝗲𝘀𝘁𝗮𝗿𝘁𝗶𝗻𝗴 𝗽𝗿𝗼𝗰𝗲𝘀𝘀...`);
+                    await delay(10);
+                    process.exit();
+                } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
+                    await delay(10);
+                    GIFTED_MD_PAIR_CODE();
                 }
             });
         } catch (err) {
-            console.error("Service error:", err);
+            console.log("service restated", err);
             await removeFile('./temp/' + id);
             if (!res.headersSent) {
-                await res.send({ code: "Service Unavailable. Please try again." });
+                await res.send({ code: "❗ Service Unavailable" });
             }
         }
     }
-    return await SARKAR_MD_PAIR_CODE();
+   return await GIFTED_MD_PAIR_CODE();
 });
 
 module.exports = router;
